@@ -9,7 +9,7 @@ namespace BangazonAPI.Models
     {
         public int Id { get; set; }
 
-        public Nullable<int> PaymentTypeId { get; set; }
+        public int PaymentTypeId { get; set; }
 
         public PaymentType paymentType { get; set; }
 
