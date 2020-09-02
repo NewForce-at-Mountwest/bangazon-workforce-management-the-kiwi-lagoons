@@ -120,11 +120,28 @@ namespace BangazonWorkforceMVC.Controllers
         // POST: EmployeeController/Create
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public ActionResult Create(IFormCollection collection)
+        public ActionResult Create(EmployeeViewModel viewModel)
         {
             try
             {
-                return RedirectToAction(nameof(Index));
+                using (SqlConnection conn = Connection)
+                {
+                    conn.Open();
+                    using (SqlCommand cmd = conn.CreateCommand())
+                    {
+                        cmd.CommandText = @"INSERT INTO Employee
+                ( FirstName, LastName, DepartmentId, IsSupervisor )
+                VALUES
+                ( @firstName, @lastName, @DepartmentId, @IsSupervisor )";
+                        cmd.Parameters.Add(new SqlParameter("@firstName", viewModel.employee.FirstName));
+                        cmd.Parameters.Add(new SqlParameter("@lastName", viewModel.employee.LastName));
+                        cmd.Parameters.Add(new SqlParameter("@departmentId", viewModel.employee.DepartmentId));
+                        cmd.Parameters.Add(new SqlParameter("@isSupervisor", viewModel.employee.isSupervisor));
+                        cmd.ExecuteNonQuery();
+
+                        return RedirectToAction(nameof(Index));
+                    }
+                }
             }
             catch
             {
