@@ -14,11 +14,12 @@ namespace BangazonAPI.Models
 
         public string LastName { get; set; }
 
-        //[Display(Name = "Department")]
+        [Display(Name = "Department")]
         public int DepartmentId { get; set; }
 
         public Department department { get; set; }
 
+        [Display(Name = "Supervisor")]
         public bool isSupervisor { get; set; }
 
         public Computer computer { get; set; }

@@ -1,9 +1,14 @@
-﻿using BangazonAPI.Models;
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Configuration;
+﻿﻿using System;
 using System.Collections.Generic;
 using System.Data.SqlClient;
+using System.Linq;
+using System.Threading.Tasks;
+using BangazonAPI.Models;
+using BangazonWorkforceMVC.Models.ViewModels;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Rendering;
+using Microsoft.Extensions.Configuration;
 
 namespace BangazonWorkforceMVC.Controllers
 {
@@ -76,17 +81,67 @@ namespace BangazonWorkforceMVC.Controllers
         // GET: EmployeeController/Create
         public ActionResult Create()
         {
-            return View();
+            
+            using (SqlConnection conn = Connection)
+            {
+                conn.Open();
+                using (SqlCommand cmd = conn.CreateCommand())
+                {
+                    cmd.CommandText = @"Select d.Id, d.Name FROM Department d";
+
+                    SqlDataReader reader = cmd.ExecuteReader();
+
+                    EmployeeViewModel viewModel = new EmployeeViewModel();
+
+                    while (reader.Read())
+                    {
+                        Department department = new Department()
+                        {
+                            Id = reader.GetInt32(reader.GetOrdinal("Id")),
+                            Name = reader.GetString(reader.GetOrdinal("Name"))
+                        };
+
+                        SelectListItem departmentOptionTag = new SelectListItem()
+                        {
+                            Text = department.Name,
+                        Value = department.Id.ToString()
+                        };
+
+                        viewModel.departments.Add(departmentOptionTag);
+                    }
+
+                    reader.Close();
+
+                    return View(viewModel);
+                }
+            }
         }
 
         // POST: EmployeeController/Create
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public ActionResult Create(IFormCollection collection)
+        public ActionResult Create(EmployeeViewModel viewModel)
         {
             try
             {
-                return RedirectToAction(nameof(Index));
+                using (SqlConnection conn = Connection)
+                {
+                    conn.Open();
+                    using (SqlCommand cmd = conn.CreateCommand())
+                    {
+                        cmd.CommandText = @"INSERT INTO Employee
+                ( FirstName, LastName, DepartmentId, IsSupervisor )
+                VALUES
+                ( @firstName, @lastName, @DepartmentId, @IsSupervisor )";
+                        cmd.Parameters.Add(new SqlParameter("@firstName", viewModel.employee.FirstName));
+                        cmd.Parameters.Add(new SqlParameter("@lastName", viewModel.employee.LastName));
+                        cmd.Parameters.Add(new SqlParameter("@departmentId", viewModel.employee.DepartmentId));
+                        cmd.Parameters.Add(new SqlParameter("@isSupervisor", viewModel.employee.isSupervisor));
+                        cmd.ExecuteNonQuery();
+
+                        return RedirectToAction(nameof(Index));
+                    }
+                }
             }
             catch
             {
