@@ -35,9 +35,10 @@ namespace BangazonWorkforceMVC.Controllers
             SELECT e.Id,
                 e.FirstName,
                 e.LastName,
-                e.DepartmentId,
-                e.isSuperVisor
+                d.Name
             FROM Employee e
+            JOIN Department d
+            ON e.DepartmentId = d.Id
         ";
                     SqlDataReader reader = cmd.ExecuteReader();
 
@@ -49,8 +50,11 @@ namespace BangazonWorkforceMVC.Controllers
                             Id = reader.GetInt32(reader.GetOrdinal("Id")),
                             FirstName = reader.GetString(reader.GetOrdinal("FirstName")),
                             LastName = reader.GetString(reader.GetOrdinal("LastName")),
-                            DepartmentId = reader.GetInt32(reader.GetOrdinal("DepartmentId")),
-                            isSupervisor = reader.GetBoolean(reader.GetOrdinal("isSupervisor"))
+                            department = new Department
+                            {
+                                Name = reader.GetString(reader.GetOrdinal("Name"))
+                            }
+
                         };
 
                         employees.Add(employee);
