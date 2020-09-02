@@ -1,4 +1,4 @@
-﻿using System;
+﻿﻿using System;
 using System.Collections.Generic;
 using System.Data.SqlClient;
 using System.Linq;
@@ -14,7 +14,6 @@ namespace BangazonWorkforceMVC.Controllers
 {
     public class EmployeeController : Controller
     {
-
         private readonly IConfiguration _config;
 
         public EmployeeController(IConfiguration config)
@@ -29,11 +28,48 @@ namespace BangazonWorkforceMVC.Controllers
                 return new SqlConnection(_config.GetConnectionString("DefaultConnection"));
             }
         }
-
         // GET: EmployeeController
         public ActionResult Index()
         {
-            return View();
+            using (SqlConnection conn = Connection)
+            {
+                conn.Open();
+                using (SqlCommand cmd = conn.CreateCommand())
+                {
+                    cmd.CommandText = @"
+            SELECT e.Id,
+                e.FirstName,
+                e.LastName,
+                d.Name
+            FROM Employee e
+            JOIN Department d
+            ON e.DepartmentId = d.Id
+        ";
+                    SqlDataReader reader = cmd.ExecuteReader();
+
+                    List<Employee> employees = new List<Employee>();
+                    while (reader.Read())
+                    {
+                        Employee employee = new Employee
+                        {
+                            Id = reader.GetInt32(reader.GetOrdinal("Id")),
+                            FirstName = reader.GetString(reader.GetOrdinal("FirstName")),
+                            LastName = reader.GetString(reader.GetOrdinal("LastName")),
+                            department = new Department
+                            {
+                                Name = reader.GetString(reader.GetOrdinal("Name"))
+                            }
+
+                        };
+
+                        employees.Add(employee);
+                    }
+
+                    reader.Close();
+
+                    return View(employees);
+                }
+            }
         }
 
         // GET: EmployeeController/Details/5
