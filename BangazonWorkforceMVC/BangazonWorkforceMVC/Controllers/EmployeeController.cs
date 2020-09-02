@@ -1,14 +1,35 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Data.SqlClient;
 using System.Linq;
 using System.Threading.Tasks;
+using BangazonAPI.Models;
+using BangazonWorkforceMVC.Models.ViewModels;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Rendering;
+using Microsoft.Extensions.Configuration;
 
 namespace BangazonWorkforceMVC.Controllers
 {
     public class EmployeeController : Controller
     {
+
+        private readonly IConfiguration _config;
+
+        public EmployeeController(IConfiguration config)
+        {
+            _config = config;
+        }
+
+        public SqlConnection Connection
+        {
+            get
+            {
+                return new SqlConnection(_config.GetConnectionString("DefaultConnection"));
+            }
+        }
+
         // GET: EmployeeController
         public ActionResult Index()
         {
@@ -24,7 +45,40 @@ namespace BangazonWorkforceMVC.Controllers
         // GET: EmployeeController/Create
         public ActionResult Create()
         {
-            return View();
+            
+            using (SqlConnection conn = Connection)
+            {
+                conn.Open();
+                using (SqlCommand cmd = conn.CreateCommand())
+                {
+                    cmd.CommandText = @"Select d.Id, d.Name FROM Department d";
+
+                    SqlDataReader reader = cmd.ExecuteReader();
+
+                    EmployeeViewModel viewModel = new EmployeeViewModel();
+
+                    while (reader.Read())
+                    {
+                        Department department = new Department()
+                        {
+                            Id = reader.GetInt32(reader.GetOrdinal("Id")),
+                            Name = reader.GetString(reader.GetOrdinal("Name"))
+                        };
+
+                        SelectListItem departmentOptionTag = new SelectListItem()
+                        {
+                            Text = department.Name,
+                        Value = department.Id.ToString()
+                        };
+
+                        viewModel.departments.Add(departmentOptionTag);
+                    }
+
+                    reader.Close();
+
+                    return View(viewModel);
+                }
+            }
         }
 
         // POST: EmployeeController/Create
