@@ -15,5 +15,8 @@ namespace BangazonAPI.Models
         public DateTime EndDate { get; set; }
 
         public int MaxAttendees { get; set; }
+
+        public List<TrainingProgram> listOfTrainingPrograms { get; set; } = new List<TrainingProgram>();
+
     }
 }

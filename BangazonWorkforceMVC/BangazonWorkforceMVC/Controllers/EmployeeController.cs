@@ -75,9 +75,77 @@ namespace BangazonWorkforceMVC.Controllers
         // GET: EmployeeController/Details/5
         public ActionResult Details(int id)
         {
-            return View();
-        }
+            using (SqlConnection conn = Connection)
+            {
+                conn.Open();
+                using (SqlCommand cmd = conn.CreateCommand())
+                {
 
+                    // Select a single student using SQL by their id
+                    cmd.CommandText = @"
+                    SELECT e.Id,
+                    e.FirstName,
+                    e.LastName,
+                    d.Name,
+                    p.Manufacturer,
+                    p.Make,
+                    r.Name
+
+                    FROM Employee e
+
+                    JOIN Department d
+                    ON e.DepartmentId = d.Id
+
+                    JOIN ComputerEmployee c
+                    ON e.Id = c.EmployeeId
+
+                    JOIN Computer p
+                    ON c.ComputerId = p.Id
+
+                    JOIN EmployeeTraining t
+                    ON e.Id = t.EmployeeId
+
+                    JOIN TrainingProgram r
+                    ON t.TrainingProgramId = r.Id
+
+                    WHERE id = @id
+
+                    ORDER BY c.UnassignDate IS NOT NULL
+                ";
+                    cmd.Parameters.Add(new SqlParameter("@id", id));
+                    SqlDataReader reader = cmd.ExecuteReader();
+
+                    // Map the raw SQL data to a student model
+                    Student student = null;
+                    if (reader.Read())
+                    {
+                        student = new Student
+                        {
+                            Id = reader.GetInt32(reader.GetOrdinal("Id")),
+                            FirstName = reader.GetString(reader.GetOrdinal("FirstName")),
+                            LastName = reader.GetString(reader.GetOrdinal("LastName")),
+                            SlackHandle = reader.GetString(reader.GetOrdinal("SlackHandle")),
+                            CohortId = reader.GetInt32(reader.GetOrdinal("CohortId"))
+                        };
+
+                    }
+
+                    reader.Close();
+
+                    // If we got something back to the db, send us to the details view
+                    if (student != null)
+                    {
+                        return View(student);
+                    }
+                    else
+                    {
+                        // If we didn't get anything back from the db, we made a custom not found page down here
+                        return RedirectToAction(nameof(NotFound));
+                    }
+
+                }
+            }
+        }
         // GET: EmployeeController/Create
         public ActionResult Create()
         {
