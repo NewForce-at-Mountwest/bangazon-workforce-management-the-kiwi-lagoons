@@ -1,9 +1,6 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 
-namespace BangazonAPI.Models
+namespace BangazonWorkforceMVC.Models
 {
     public class TrainingProgram
     {
@@ -15,8 +12,5 @@ namespace BangazonAPI.Models
         public DateTime EndDate { get; set; }
 
         public int MaxAttendees { get; set; }
-
-        public List<TrainingProgram> listOfTrainingPrograms { get; set; } = new List<TrainingProgram>();
-
     }
 }

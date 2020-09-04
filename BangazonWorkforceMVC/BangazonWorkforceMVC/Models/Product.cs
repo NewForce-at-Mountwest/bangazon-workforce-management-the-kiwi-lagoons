@@ -1,4 +1,4 @@
-﻿namespace BangazonAPI.Models
+﻿namespace BangazonWorkforceMVC.Models
 {
     public class Product
     {

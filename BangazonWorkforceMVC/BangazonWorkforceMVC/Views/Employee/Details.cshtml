@@ -1,4 +1,4 @@
-﻿@model BangazonAPI.Models.Employee
+﻿@model BangazonWorkforceMVC.Models.Employee
 
 @{ ViewData["Title"] = "Details"; }
 
@@ -27,10 +27,10 @@
             @Html.DisplayFor(model => model.LastName)
         </dd>
         <dt class="col-sm-2">
-            @Html.DisplayNameFor(model => model.DepartmentId)
+            @Html.DisplayNameFor(model => model.department.Name)
         </dt>
         <dd class="col-sm-10">
-            @Html.DisplayFor(model => model.DepartmentId)
+            @Html.DisplayFor(model => model.department.Name)
         </dd>
         <dt class="col-sm-2">
             @Html.DisplayNameFor(model => model.isSupervisor)
@@ -38,24 +38,33 @@
         <dd class="col-sm-10">
             @Html.DisplayFor(model => model.isSupervisor)
         </dd>
-        @*Dropdown*@
-        @*<div class="form-group">
-                <label asp-for="listOfTrainingPrograms" class="control-label"></label>
-                <select asp-for="listOfTrainingPrograms" asp-items="@Model.trainingProgram" class="form-control"></select>
-                <span asp-validation-for="listOfTrainingPrograms" class="text-danger"></span>
-            </div>*@
+        <dt class="col-sm-2">
+            @Html.DisplayNameFor(model => model.computer.Manufacturer)
+        </dt>
+        <dd class="col-sm-10">
+            @Html.DisplayFor(model => model.computer.Manufacturer)
+        </dd>
+        <dt class="col-sm-2">
+            @Html.DisplayNameFor(model => model.computer.Make)
+        </dt>
+        <dd class="col-sm-10">
+            @Html.DisplayFor(model => model.computer.Make)
+        </dd>
 
+        <dt class="col-sm-2">
+            @Html.DisplayNameFor(model => model.TrainingPrograms)
+        </dt>
 
-        @*<dt class="col-sm-2">
-                @Html.DisplayNameFor(model => model.trainingProgram.Name)
-            </dt>
-            <dd class="col-sm-10">
-                @Html.DisplayFor(model => model.trainingProgram.Name)
-            </dd>*@
+        @foreach (TrainingProgram item in Model.TrainingPrograms)
+        {
+<dd class="col-sm-10">
+    @item.Name
+</dd>
+}
 
     </dl>
 </div>
 <div>
-    @Html.ActionLink("Edit", "Edit", new { /* id = Model.PrimaryKey */ }) |
+    @Html.ActionLink("Edit", "Edit", new { id = Model.Id }) |
     <a asp-action="Index">Back to List</a>
 </div>

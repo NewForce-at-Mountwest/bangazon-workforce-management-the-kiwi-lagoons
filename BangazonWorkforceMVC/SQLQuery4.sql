@@ -1,30 +1,32 @@
 ﻿SELECT e.Id,
-    e.FirstName,
-    e.LastName,
-    d.Name,
-    p.Manufacturer,
-    p.Make,
-    r.Name
-FROM Employee e
+                    e.FirstName,
+                    e.LastName,
+                    e.isSuperVisor,
+                    d.Name,
+                    p.Manufacturer,
+                    p.Make,
+                    r.Name AS 'Training Name'
 
-JOIN Department d
-ON e.DepartmentId = d.Id
+                    FROM Employee e
 
-JOIN ComputerEmployee c
-ON e.Id = c.EmployeeId
+                    LEFT JOIN Department d
+                    ON e.DepartmentId = d.Id
 
-JOIN Computer p
-ON c.ComputerId = p.Id
+                    LEFT JOIN ComputerEmployee c
+                    ON e.Id = c.EmployeeId
 
-JOIN EmployeeTraining t
-ON e.Id = t.EmployeeId
+                    LEFT JOIN Computer p
+                    ON c.ComputerId = p.Id
 
-JOIN TrainingProgram r
-ON t.TrainingProgramId = r.Id
+                    LEFT JOIN EmployeeTraining t
+                    ON e.Id = t.EmployeeId
 
-WHERE c.UnassignDate IS NOT NULL
+                    LEFT JOIN TrainingProgram r
+                    ON t.TrainingProgramId = r.Id
 
-ORDER BY e.Id
+                    WHERE e.id = 8
+
+                    AND c.UnassignDate is null
 
 --IS NULL
 

@@ -1,4 +1,4 @@
-﻿using BangazonAPI.Models;
+﻿using BangazonWorkforceMVC.Models;
 using BangazonWorkforceMVC.Models.ViewModels;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -25,8 +25,6 @@ namespace BangazonWorkforceMVC.Controllers
                 return new SqlConnection(_config.GetConnectionString("DefaultConnection"));
             }
         }
-
-        public List<TrainingProgram> listofTrainingPrograms { get; private set; }
 
 
         // GET: EmployeeController
@@ -87,37 +85,39 @@ namespace BangazonWorkforceMVC.Controllers
                     SELECT e.Id,
                     e.FirstName,
                     e.LastName,
+                    e.isSuperVisor,
                     d.Name,
                     p.Manufacturer,
                     p.Make,
-                    r.Name
+                    r.Name AS 'Training Name'
 
                     FROM Employee e
 
-                    JOIN Department d
+                    LEFT JOIN Department d
                     ON e.DepartmentId = d.Id
 
-                    JOIN ComputerEmployee c
+                    LEFT JOIN ComputerEmployee c
                     ON e.Id = c.EmployeeId
 
-                    JOIN Computer p
+                    LEFT JOIN Computer p
                     ON c.ComputerId = p.Id
 
-                    JOIN EmployeeTraining t
+                    LEFT JOIN EmployeeTraining t
                     ON e.Id = t.EmployeeId
 
-                    JOIN TrainingProgram r
+                    LEFT JOIN TrainingProgram r
                     ON t.TrainingProgramId = r.Id
 
                     WHERE e.id = @id
+
+                    AND c.UnassignDate is null
                 ";
                     cmd.Parameters.Add(new SqlParameter("@id", id));
                     SqlDataReader reader = cmd.ExecuteReader();
 
-                    listofTrainingPrograms = new List<TrainingProgram>();
-
                     // Map the raw SQL data to an employee model
                     Employee employee = null;
+
                     if (reader.Read())
                     {
                         employee = new Employee
@@ -125,12 +125,28 @@ namespace BangazonWorkforceMVC.Controllers
                             Id = reader.GetInt32(reader.GetOrdinal("Id")),
                             FirstName = reader.GetString(reader.GetOrdinal("FirstName")),
                             LastName = reader.GetString(reader.GetOrdinal("LastName")),
+                            isSupervisor = reader.GetBoolean(reader.GetOrdinal("isSuperVisor")),
                             department = new Department
                             {
                                 Name = reader.GetString(reader.GetOrdinal("Name"))
+                            },
+                            computer = new Computer
+                            {
+                                Manufacturer = reader.GetString(reader.GetOrdinal("Manufacturer")),
+                                Make = reader.GetString(reader.GetOrdinal("Make"))
                             }
                             //listOfTrainingPrograms = reader.GetString(reader.GetOrdinal("listOfTrainingPrograms"))
                         };
+
+                        while (reader.Read())
+                        {
+                            TrainingProgram newTrainingPrograms = new TrainingProgram
+                            {
+                                Name = reader.GetString(reader.GetOrdinal("Training Name"))
+                            };
+
+                            employee.TrainingPrograms.Add(newTrainingPrograms);
+                        }
 
                     }
 
