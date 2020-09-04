@@ -13,5 +13,9 @@ namespace BangazonWorkforceMVC.Models.ViewModels
 
         // A dropdown list to get all of the departments
         public List<SelectListItem> departments { get; set; } = new List<SelectListItem>();
+
+        // A dropdown list to get all of the computers
+        public List<SelectListItem> computers { get; set; } = new List<SelectListItem>();
+
     }
 }

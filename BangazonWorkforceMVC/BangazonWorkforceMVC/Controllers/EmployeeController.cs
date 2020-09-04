@@ -104,7 +104,7 @@ namespace BangazonWorkforceMVC.Controllers
                         SelectListItem departmentOptionTag = new SelectListItem()
                         {
                             Text = department.Name,
-                        Value = department.Id.ToString()
+                            Value = department.Id.ToString()
                         };
 
                         viewModel.departments.Add(departmentOptionTag);
@@ -152,21 +152,181 @@ namespace BangazonWorkforceMVC.Controllers
         // GET: EmployeeController/Edit/5
         public ActionResult Edit(int id)
         {
-            return View();
+
+            using (SqlConnection conn = Connection)
+            {
+                conn.Open();
+                using (SqlCommand cmd = conn.CreateCommand())
+                {
+                    cmd.CommandText = @"
+                        SELECT e.Id, e.FirstName, e.LastName, e.DepartmentId, e.IsSupervisor, ce.ComputerId, ce.EmployeeId, c.Make FROM Employee e
+Left JOIN ComputerEmployee ce ON e.Id = ce.EmployeeId
+LEFT JOIN Computer c ON c.Id = ce.ComputerId
+WHERE e.Id  = @id
+AND ce.UnassignDate IS Null ";
+                    cmd.Parameters.Add(new SqlParameter("@id", id));
+
+                    SqlDataReader reader = cmd.ExecuteReader();
+
+                    // Create a new instance of our view model
+                    EmployeeViewModel viewModel = new EmployeeViewModel();
+
+                    Employee employee = null;
+
+                    if (reader.Read())
+                    {
+                        employee = new Employee
+                        {
+                            Id = reader.GetInt32(reader.GetOrdinal("Id")),
+                            FirstName = reader.GetString(reader.GetOrdinal("FirstName")),
+                            LastName = reader.GetString(reader.GetOrdinal("LastName")),
+                            DepartmentId = reader.GetInt32(reader.GetOrdinal("DepartmentId")),
+                            isSupervisor = reader.GetBoolean(reader.GetOrdinal("IsSupervisor")),
+                            computer = new Computer
+                            {
+                                Id = reader.GetInt32(reader.GetOrdinal("ComputerId")),
+                                Make = reader.GetString(reader.GetOrdinal("Make"))
+                            }
+                        };
+                    }
+                    reader.Close();
+                    viewModel.employee = employee;
+
+                    
+
+                    // Select all the departments
+                    cmd.CommandText = @"SELECT Department.Id, Department.Name FROM Department";
+
+                    reader = cmd.ExecuteReader();
+
+                    // Create a new instance of our view model
+
+                    while (reader.Read())
+                    {
+                        // Map the raw data to our department model
+                        Department department = new Department
+                        {
+                            Id = reader.GetInt32(reader.GetOrdinal("Id")),
+                            Name = reader.GetString(reader.GetOrdinal("Name"))
+                        };
+
+                        // Use the info to build our SelectListItem
+                        SelectListItem departmentOptionTag = new SelectListItem()
+                        {
+                            Text = department.Name,
+                            Value = department.Id.ToString()
+                        };
+
+                        // Add the select list item to our list of dropdown options
+                        viewModel.departments.Add(departmentOptionTag);
+
+                    }
+
+                    reader.Close();
+
+                    // Select all the computers currently assigned to the user or available to be assigned
+                    cmd.CommandText = @"SELECT c.Id, c.DecomissionDate, c.Make, c.Manufacturer, ce.Id as 'ComputerEmployee Id', ce.ComputerId, ce.EmployeeId, ce.AssignDate, ce.UnassignDate
+FROM Computer c 
+LEFT JOIN ComputerEmployee ce
+ON c.Id = ce.ComputerId
+WHERE (AssignDate IS NULL AND DecomissionDate IS NULL)
+OR (ComputerId != ALL (Select ComputerId FROM ComputerEmployee WHERE UnassignDate IS NULL) AND DecomissionDate IS NULL)
+OR (EmployeeId = @Id AND UnassignDate is NULL)  ";
+
+                    reader = cmd.ExecuteReader();
+                    List<int> idTracker = new List<int>();
+
+                    viewModel.computers.Add(new SelectListItem { Value = "0", Text = "Choose a computer" });
+                    while (reader.Read())
+                    {
+                        
+
+                        if (!idTracker.Any(listId => listId == reader.GetInt32(reader.GetOrdinal("Id"))))
+                        {
+                            // Map the raw data to our computer model
+                            Computer computer = new Computer
+                            {
+                                Id = reader.GetInt32(reader.GetOrdinal("Id")),
+                                Make = reader.GetString(reader.GetOrdinal("Make"))
+                            };
+
+                            // Use the info to build our SelectListItem
+                            SelectListItem computerOptionTag = new SelectListItem()
+                            {
+                                Text = computer.Make,
+                                Value = computer.Id.ToString()
+                            };
+
+
+                            // Add the select list item to our list of dropdown options
+                                viewModel.computers.Add(computerOptionTag);
+                                    
+                            
+
+                        }
+
+                        idTracker.Add(reader.GetInt32(reader.GetOrdinal("Id")));
+
+                        Console.WriteLine();
+                       
+
+                    }
+
+                    return View(viewModel);
+                }
+
+
+            }
         }
 
         // POST: EmployeeController/Edit/5
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public ActionResult Edit(int id, IFormCollection collection)
+        public ActionResult Edit(int id, EmployeeViewModel viewModel)
         {
             try
             {
-                return RedirectToAction(nameof(Index));
+                using (SqlConnection conn = Connection)
+                {
+                    conn.Open();
+                    using (SqlCommand cmd = conn.CreateCommand())
+                    {
+                        cmd.CommandText = @"UPDATE Employee
+                                            SET FirstName = @FirstName,
+                                                LastName = @LastName,
+                                                IsSupervisor = @isSupervisor,
+                                                DepartmentId = @DepartmentId
+                                                WHERE Id = @id;
+                                            UPDATE ComputerEmployee
+                                            SET UnassignDate = @unassignDate
+                                            WHERE EmployeeId=@employeeId AND UnassignDate IS NULL; 
+                                            INSERT INTO ComputerEmployee
+                                            ( EmployeeId, ComputerId, AssignDate )
+                                            VALUES
+                                            ( @employeeId, @computerId, @assignDate );"; 
+                        cmd.Parameters.Add(new SqlParameter("@FirstName", viewModel.employee.FirstName));
+                        cmd.Parameters.Add(new SqlParameter("@LastName", viewModel.employee.LastName));
+                        cmd.Parameters.Add(new SqlParameter("@isSupervisor", viewModel.employee.isSupervisor));
+                        cmd.Parameters.Add(new SqlParameter("@DepartmentId", viewModel.employee.DepartmentId));
+                        cmd.Parameters.Add(new SqlParameter("@id", id));
+                        cmd.Parameters.Add(new SqlParameter("@employeeId", id));
+                        cmd.Parameters.Add(new SqlParameter("@unassignDate", DateTime.Now));
+                        cmd.Parameters.Add(new SqlParameter("@computerId", viewModel.employee.computer.Id));
+                        cmd.Parameters.Add(new SqlParameter("@assignDate", DateTime.Now));
+
+
+                        int rowsAffected = cmd.ExecuteNonQuery();
+                        if (rowsAffected > 0)
+                        {
+                            return RedirectToAction(nameof(Index));
+                        }
+                        throw new Exception("No rows affected");
+                    }
+                }
             }
             catch
             {
-                return View();
+                return View(viewModel);
             }
         }
 
