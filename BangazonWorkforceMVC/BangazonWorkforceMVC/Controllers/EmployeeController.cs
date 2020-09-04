@@ -1,14 +1,11 @@
-﻿﻿using System;
-using System.Collections.Generic;
-using System.Data.SqlClient;
-using System.Linq;
-using System.Threading.Tasks;
-using BangazonAPI.Models;
+﻿using BangazonAPI.Models;
 using BangazonWorkforceMVC.Models.ViewModels;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.Extensions.Configuration;
+using System.Collections.Generic;
+using System.Data.SqlClient;
 
 namespace BangazonWorkforceMVC.Controllers
 {
@@ -28,6 +25,10 @@ namespace BangazonWorkforceMVC.Controllers
                 return new SqlConnection(_config.GetConnectionString("DefaultConnection"));
             }
         }
+
+        public List<TrainingProgram> listofTrainingPrograms { get; private set; }
+
+
         // GET: EmployeeController
         public ActionResult Index()
         {
@@ -81,7 +82,7 @@ namespace BangazonWorkforceMVC.Controllers
                 using (SqlCommand cmd = conn.CreateCommand())
                 {
 
-                    // Select a single student using SQL by their id
+                    // Select a single employee using SQL by their id
                     cmd.CommandText = @"
                     SELECT e.Id,
                     e.FirstName,
@@ -108,24 +109,27 @@ namespace BangazonWorkforceMVC.Controllers
                     JOIN TrainingProgram r
                     ON t.TrainingProgramId = r.Id
 
-                    WHERE id = @id
-
-                    ORDER BY c.UnassignDate IS NOT NULL
+                    WHERE e.id = @id
                 ";
                     cmd.Parameters.Add(new SqlParameter("@id", id));
                     SqlDataReader reader = cmd.ExecuteReader();
 
-                    // Map the raw SQL data to a student model
-                    Student student = null;
+                    listofTrainingPrograms = new List<TrainingProgram>();
+
+                    // Map the raw SQL data to an employee model
+                    Employee employee = null;
                     if (reader.Read())
                     {
-                        student = new Student
+                        employee = new Employee
                         {
                             Id = reader.GetInt32(reader.GetOrdinal("Id")),
                             FirstName = reader.GetString(reader.GetOrdinal("FirstName")),
                             LastName = reader.GetString(reader.GetOrdinal("LastName")),
-                            SlackHandle = reader.GetString(reader.GetOrdinal("SlackHandle")),
-                            CohortId = reader.GetInt32(reader.GetOrdinal("CohortId"))
+                            department = new Department
+                            {
+                                Name = reader.GetString(reader.GetOrdinal("Name"))
+                            }
+                            //listOfTrainingPrograms = reader.GetString(reader.GetOrdinal("listOfTrainingPrograms"))
                         };
 
                     }
@@ -133,9 +137,9 @@ namespace BangazonWorkforceMVC.Controllers
                     reader.Close();
 
                     // If we got something back to the db, send us to the details view
-                    if (student != null)
+                    if (employee != null)
                     {
-                        return View(student);
+                        return View(employee);
                     }
                     else
                     {
@@ -149,7 +153,7 @@ namespace BangazonWorkforceMVC.Controllers
         // GET: EmployeeController/Create
         public ActionResult Create()
         {
-            
+
             using (SqlConnection conn = Connection)
             {
                 conn.Open();
@@ -172,7 +176,7 @@ namespace BangazonWorkforceMVC.Controllers
                         SelectListItem departmentOptionTag = new SelectListItem()
                         {
                             Text = department.Name,
-                        Value = department.Id.ToString()
+                            Value = department.Id.ToString()
                         };
 
                         viewModel.departments.Add(departmentOptionTag);

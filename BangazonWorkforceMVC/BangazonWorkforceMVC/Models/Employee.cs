@@ -1,4 +1,5 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 
 namespace BangazonAPI.Models
 {
@@ -23,6 +24,10 @@ namespace BangazonAPI.Models
         public bool isSupervisor { get; set; }
 
         public Computer computer { get; set; }
+
+        public TrainingProgram trainingProgram { get; set; }
+
+        public List<TrainingProgram> listOfTrainingPrograms { get; set; } = new List<TrainingProgram>();
 
     }
 }
