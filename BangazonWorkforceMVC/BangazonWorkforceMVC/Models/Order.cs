@@ -1,7 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 
-namespace BangazonAPI.Models
+namespace BangazonWorkforceMVC.Models
 {
     public class Order
     {

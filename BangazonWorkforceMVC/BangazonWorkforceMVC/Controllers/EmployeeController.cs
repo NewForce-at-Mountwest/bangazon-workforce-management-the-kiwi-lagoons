@@ -1,14 +1,11 @@
-﻿﻿using System;
-using System.Collections.Generic;
-using System.Data.SqlClient;
-using System.Linq;
-using System.Threading.Tasks;
-using BangazonAPI.Models;
+﻿using BangazonWorkforceMVC.Models;
 using BangazonWorkforceMVC.Models.ViewModels;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.Extensions.Configuration;
+using System.Collections.Generic;
+using System.Data.SqlClient;
 
 namespace BangazonWorkforceMVC.Controllers
 {
@@ -28,6 +25,8 @@ namespace BangazonWorkforceMVC.Controllers
                 return new SqlConnection(_config.GetConnectionString("DefaultConnection"));
             }
         }
+
+
         // GET: EmployeeController
         public ActionResult Index()
         {
@@ -75,13 +74,102 @@ namespace BangazonWorkforceMVC.Controllers
         // GET: EmployeeController/Details/5
         public ActionResult Details(int id)
         {
-            return View();
-        }
+            using (SqlConnection conn = Connection)
+            {
+                conn.Open();
+                using (SqlCommand cmd = conn.CreateCommand())
+                {
 
+                    // Select a single employee using SQL by their id
+                    cmd.CommandText = @"
+                    SELECT e.Id,
+                    e.FirstName,
+                    e.LastName,
+                    e.isSuperVisor,
+                    d.Name,
+                    p.Manufacturer,
+                    p.Make,
+                    r.Name AS 'Training Name'
+
+                    FROM Employee e
+
+                    LEFT JOIN Department d
+                    ON e.DepartmentId = d.Id
+
+                    LEFT JOIN ComputerEmployee c
+                    ON e.Id = c.EmployeeId
+
+                    LEFT JOIN Computer p
+                    ON c.ComputerId = p.Id
+
+                    LEFT JOIN EmployeeTraining t
+                    ON e.Id = t.EmployeeId
+
+                    LEFT JOIN TrainingProgram r
+                    ON t.TrainingProgramId = r.Id
+
+                    WHERE e.id = @id
+
+                    AND c.UnassignDate is null
+                ";
+                    cmd.Parameters.Add(new SqlParameter("@id", id));
+                    SqlDataReader reader = cmd.ExecuteReader();
+
+                    // Map the raw SQL data to an employee model
+                    Employee employee = null;
+
+                    if (reader.Read())
+                    {
+                        employee = new Employee
+                        {
+                            Id = reader.GetInt32(reader.GetOrdinal("Id")),
+                            FirstName = reader.GetString(reader.GetOrdinal("FirstName")),
+                            LastName = reader.GetString(reader.GetOrdinal("LastName")),
+                            isSupervisor = reader.GetBoolean(reader.GetOrdinal("isSuperVisor")),
+                            department = new Department
+                            {
+                                Name = reader.GetString(reader.GetOrdinal("Name"))
+                            },
+                            computer = new Computer
+                            {
+                                Manufacturer = reader.GetString(reader.GetOrdinal("Manufacturer")),
+                                Make = reader.GetString(reader.GetOrdinal("Make"))
+                            }
+                            //listOfTrainingPrograms = reader.GetString(reader.GetOrdinal("listOfTrainingPrograms"))
+                        };
+
+                        while (reader.Read())
+                        {
+                            TrainingProgram newTrainingPrograms = new TrainingProgram
+                            {
+                                Name = reader.GetString(reader.GetOrdinal("Training Name"))
+                            };
+
+                            employee.TrainingPrograms.Add(newTrainingPrograms);
+                        }
+
+                    }
+
+                    reader.Close();
+
+                    // If we got something back to the db, send us to the details view
+                    if (employee != null)
+                    {
+                        return View(employee);
+                    }
+                    else
+                    {
+                        // If we didn't get anything back from the db, we made a custom not found page down here
+                        return RedirectToAction(nameof(NotFound));
+                    }
+
+                }
+            }
+        }
         // GET: EmployeeController/Create
         public ActionResult Create()
         {
-            
+
             using (SqlConnection conn = Connection)
             {
                 conn.Open();

@@ -1,6 +1,7 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 
-namespace BangazonAPI.Models
+namespace BangazonWorkforceMVC.Models
 {
     public class Employee
     {
@@ -23,6 +24,9 @@ namespace BangazonAPI.Models
         public bool isSupervisor { get; set; }
 
         public Computer computer { get; set; }
+
+        public List<TrainingProgram> TrainingPrograms { get; set; } = new List<TrainingProgram>();
+
 
     }
 }
