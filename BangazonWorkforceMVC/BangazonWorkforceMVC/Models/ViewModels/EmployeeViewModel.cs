@@ -11,5 +11,8 @@ namespace BangazonWorkforceMVC.Models.ViewModels
         public List<SelectListItem> departments { get; set; } = new List<SelectListItem>();
 
         public TrainingProgram TrainingProgram { get; set; }
+        // A dropdown list to get all of the computers
+        public List<SelectListItem> computers { get; set; } = new List<SelectListItem>();
+
     }
 }
